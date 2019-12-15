@@ -4,18 +4,15 @@
 
 #include "stdio.h"
 #include "stdlib.h"
+#include "string.h"
 
-void init_and_read_bitmap(struct fs_description* fs) {
+void init_bitmap(struct fs_description* fs) {
 	struct bitmap_description* bitmap;
 	struct superblock_ondisk* ondisk;
 	int num_blocks;
-	int err;
-	int have_read;
-	FILE* f;
 
 	ondisk = fs->superblock->ondisk;
 	num_blocks = ondisk->size / ondisk->blocksize;
-	f = fs->device_file;
 
 	bitmap = (struct bitmap_description*)malloc(sizeof(struct bitmap_description));
 	if (bitmap <= 0) {
@@ -29,8 +26,22 @@ void init_and_read_bitmap(struct fs_description* fs) {
 		exit(1);
 	}
 
-	/* read */
-	
+	fs->bitmap = bitmap;
+}
+
+void read_bitmap(struct fs_description* fs) {
+	struct bitmap_description* bitmap;
+	struct superblock_ondisk* ondisk;
+	int err;
+	int have_read;
+	FILE* f;
+	int num_blocks;
+
+	f = fs->device_file;
+	bitmap = fs->bitmap;
+	ondisk = fs->superblock->ondisk;
+	num_blocks = ondisk->size / ondisk->blocksize;
+
 	err = fseek(f, ondisk->bitmap_offset, SEEK_SET);
 	if (err != 0) {
 		printf("Failed to fseek while reading bitmap_description");
@@ -39,8 +50,6 @@ void init_and_read_bitmap(struct fs_description* fs) {
     while((have_read = fread(bitmap->bitmap, num_blocks * sizeof(char), 1, f)) != 1) {
 		/* pass */
 	} 
-
-	fs->bitmap = bitmap;
 }
 
 int save_bitmap(struct fs_description* fs) {
@@ -52,8 +61,8 @@ int save_bitmap(struct fs_description* fs) {
 	char* bitmap;
 	
 	bitmap = fs->bitmap->bitmap;
-	num_blocks = ondisk->size / ondisk->blocksize;
 	ondisk = fs->superblock->ondisk;
+	num_blocks = ondisk->size / ondisk->blocksize;
 	f = fs->device_file;
 
 	err = fseek(f, ondisk->bitmap_offset, SEEK_SET);
@@ -68,10 +77,29 @@ int save_bitmap(struct fs_description* fs) {
 	return 0;
 }
 
+void create_bitmap(struct fs_description* fs) {
+	char* bitmap;
+	struct superblock_ondisk* ondisk;
+	int num_blocks;
+
+	ondisk = fs->superblock->ondisk;
+	num_blocks = ondisk->size / ondisk->blocksize;
+
+	init_bitmap(fs);
+	bitmap = fs->bitmap->bitmap;
+
+	// fill with zeros
+	memset(bitmap, 0, num_blocks * sizeof(char));
+	*(bitmap + 0) = (char)1; // superblock
+
+	save_bitmap(fs);
+}
+
 int allocate_internal(struct fs_description* fs, int start, int end) {
 	char* bitmap;
 	int block;
 	char found_unused;
+	int err;
 
 	bitmap = fs->bitmap->bitmap;
 
@@ -89,7 +117,11 @@ int allocate_internal(struct fs_description* fs, int start, int end) {
 
 	*(bitmap + block) = (char)1;
 
-	save_bitmap(fs);
+	err = save_bitmap(fs);
+	if (err != 0) {
+		fprintf(stderr, "failed to save bitmap");
+		exit(1);
+	}
 
 	return block;
 }
@@ -100,7 +132,7 @@ int allocate_inode(struct fs_description* fs) {
 	int cnt;
 
 	ondisk = fs->superblock->ondisk;
-	start = ondisk->inodes_offset;
+	start = ondisk->inodes_offset / ondisk->blocksize;
 	cnt = ondisk->inodes_blocknum;
 
 	return allocate_internal(fs, start, start + cnt);
@@ -112,8 +144,9 @@ int allocate_inode_block(struct fs_description* fs) {
 	int cnt;
 
 	ondisk = fs->superblock->ondisk;
-	start = ondisk->files_and_directories_offset;
+	start = ondisk->files_and_directories_offset / ondisk->blocksize;
 	cnt = ondisk->files_and_directories_blocknum;
 
-	return allocate_internal(fs, start, start + cnt);
+	int res = allocate_internal(fs, start, start + cnt);
+	return res;
 }

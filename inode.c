@@ -2,6 +2,8 @@
 
 #include "assert.h"
 #include "stdlib.h"
+#include "time.h"
+#include "string.h"
 
 #include "block.h"
 #include "fs.h"
@@ -31,6 +33,27 @@ struct inode* init_inode(struct fs_description* fs, int id) {
 	i->ondisk = init_inode_ondisk(fs);
 	i->id = id;
 	i->fs = fs;
+
+	return i;
+}
+
+struct inode* create_inode(struct fs_description* fs, int permissions) {
+	struct inode* i;
+	time_t now;
+	int block;
+
+	now = time(NULL);
+	block = allocate_inode(fs);
+	i = init_inode(fs, inode_id_by_block(fs, block));
+
+	memset(i->ondisk, 0, sizeof(struct inode_ondisk));
+	i->ondisk->permissions = permissions;
+	i->ondisk->links = 0; // TODO: add when adding dirent
+	i->ondisk->user_id = 0; // root
+	i->ondisk->group_id = 0; // root
+	i->ondisk->size = 0;
+	i->ondisk->access_time = now;
+	i->ondisk->modification_time = now;
 
 	return i;
 }
@@ -118,6 +141,8 @@ int save_inode_content(struct inode* i, void* from, int size) {
 	f = i->fs->device_file;
 	ondisk = i->ondisk;
 	blocksize = i->fs->superblock->ondisk->blocksize;
+
+	i->ondisk->size = size;
 
 	offset = offset_for_inode(i->fs, i->id);
 	err = fseek(f, offset, SEEK_SET);

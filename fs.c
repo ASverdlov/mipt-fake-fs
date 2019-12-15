@@ -5,8 +5,11 @@
 #include "assert.h"
 
 #include "block.h"
+#include "dir.h"
+#include "dirent.h"
 #include "ondisk.h"
 #include "utility.h"
+#include "inode.h"
 
 struct superblock_description* fs_superblock_init(struct fs_description* fs) {
 	struct superblock_description* sb;
@@ -74,13 +77,29 @@ int read_fs(struct fs_description* fs, char* device_path) {
 		return err;
 	}
 
+	init_bitmap(fs);
+	read_bitmap(fs);
+
 	return 0;
+}
+
+int inode_id_by_block(struct fs_description* fs, int block) {
+	struct superblock_ondisk* ondisk;
+
+	ondisk = fs->superblock->ondisk;
+	
+	return block - ondisk->inodes_offset / ondisk->blocksize;
 }
 
 int create_fs(char* device_path) {
 	struct fs_description* fs;
+	struct dir_description* dir;
 	int device_size;
 	int device_blocks;
+	int block;
+	struct inode* i;
+	struct dirent_ondisk self_dirent;
+	struct dirent_ondisk parent_dirent;
 
 	fs = init_fs(device_path);
 
@@ -106,9 +125,30 @@ int create_fs(char* device_path) {
 		return err;
 	}
 
-	init_and_read_bitmap(fs);
+	create_bitmap(fs);
 
-	printf("TODO: create a root directory!\n");
+	// 1. create inode
+	i = create_inode(fs, 01777); // 1 - dir, 777 - permissions for everything to all users
+	assert(i->id == 0);
+
+	// 2. create dir
+	dir = create_dir(fs);
+
+	// 3. add dirents
+	strncpy(self_dirent.name, ".", 2);
+	self_dirent.inode_id = i->id;
+	add_dirent_ondisk(dir, &self_dirent);
+
+	strncpy(parent_dirent.name, "..", 3);
+	parent_dirent.inode_id = i->id;
+	add_dirent_ondisk(dir, &parent_dirent);
+
+	// 4. save dir
+	err = save_inode_content(i, dir->ondisk, sizeof(struct dir_ondisk));
+	if (err != 0) {
+		fprintf(stderr, "Failed to save dir content for inode %d", i->id);
+		exit(1);
+	}
 
 	return 0;
 }

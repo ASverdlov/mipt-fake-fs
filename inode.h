@@ -14,10 +14,9 @@ struct inode_ondisk {
 	int group_id;
 	int size;
 
-	int access_time;
-	int modification_time;
+	time_t access_time;
+	time_t modification_time;
 
-	int num_blocks;
 	int blocks[12]; // TODO: hardcode max number of blocks
 };
 
@@ -28,6 +27,7 @@ struct inode {
 	struct fs_description* fs;
 };
 
+struct inode* create_inode(struct fs_description* fs, int permissions);
 struct inode* init_inode(struct fs_description* fs, int id);
 int read_inode(struct inode* i);
 char is_directory_inode(struct fs_description* fs, int inode_id);

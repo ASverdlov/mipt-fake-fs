@@ -7,7 +7,9 @@ struct bitmap_description {
 	char* bitmap;
 };
 
-void init_and_read_bitmap(struct fs_description* fs);
+void init_bitmap(struct fs_description* fs);
+void read_bitmap(struct fs_description* fs);
+void create_bitmap(struct fs_description* fs);
 int save_bitmap(struct fs_description* fs);
 
 int allocate_internal(struct fs_description* fs, int start, int end);

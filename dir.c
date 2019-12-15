@@ -32,6 +32,23 @@ struct dir_description* init_dir(struct fs_description* fs) {
 	return dir;
 }
 
+struct dir_description* create_dir(struct fs_description* fs) {
+	struct dir_description* dir;
+	int block;
+
+	dir = init_dir(fs);
+	dir->ondisk->num_entries = 0;
+
+	return dir;
+}
+
+void add_dirent_ondisk(struct dir_description* dir, struct dirent_ondisk* d) {
+	int entry_id;
+
+	entry_id = dir->ondisk->num_entries++;
+	memcpy(&dir->ondisk->dirents[entry_id], d, sizeof(struct dirent));
+}
+
 struct dir_description* dir_from_inode(struct fs_description* fs, int inode_id) {
 	int err;
 	struct dir_description* dir;
@@ -44,7 +61,7 @@ struct dir_description* dir_from_inode(struct fs_description* fs, int inode_id) 
 		fprintf(stderr, "Failed to read inode %d", inode_id);
 		exit(1);
 	}
-	
+
 	dir = init_dir(fs);
 	err = load_inode_content(i, dir->ondisk, sizeof(struct dir_ondisk));
 	if (err != 0) {
