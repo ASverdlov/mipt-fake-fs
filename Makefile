@@ -1,4 +1,4 @@
-.PHONY: main
+ .PHONY: main
 
 main: main.c
-	gcc -std=gnu11 -o fakefs main.c
+	gcc -std=gnu11 -g -o fakefs main.c

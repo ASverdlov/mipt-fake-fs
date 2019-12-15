@@ -12,7 +12,7 @@ void print_help_and_exit(int status) {
 	exit(status);
 }
 
-int process_mkfs_command(int argc, char** argv) {
+int mkfs_command(int argc, char** argv) {
 	// $ fakefs mkfs <device-file>
 
 	if (argc != 3) {
@@ -26,7 +26,7 @@ int process_mkfs_command(int argc, char** argv) {
 	return create_fs(device_path);
 }
 
-int process_info_command(int argc, char** argv) {
+int info_command(int argc, char** argv) {
 	// $ fakefs info <device-file>
 	int err;
 
@@ -38,24 +38,17 @@ int process_info_command(int argc, char** argv) {
 
 	char* device_path = argv[2];
 
-	struct fs_description* fs = fs_init();
+	struct fs_description* fs = init_fs(device_path);
 	if (fs <= 0) {
 		return (int)fs;
 	}
 
-	err = fs_read(fs, device_path);
+	err = read_fs(fs, device_path);
 	if (err != 0) {
 		return err;
 	}
 
-	printf("Superblock info:\n");
-	printf(" - magic: %d\n",     fs->superblock->magic);
-	printf(" - size: %d\n",      fs->superblock->size);
-	printf(" - blocksize: %d\n", fs->superblock->blocksize);
-	printf("\n");
-	printf(" - inodes_offset: %d\n", fs->superblock->inodes_offset);
-	printf("TODO\n");
-
+	print_superblock_ondisk(fs->superblock->ondisk);
 	return 0;
 }
 
@@ -65,9 +58,9 @@ int cli_dispatch_command(int argc, char** argv) {
 	}
 
 	if (!strcmp(argv[1], "mkfs")) {
-		return process_mkfs_command(argc, argv);
+		return mkfs_command(argc, argv);
 	} else if (!strcmp(argv[1], "info")) {
-		return process_info_command(argc, argv);
+		return info_command(argc, argv);
 	} else if (!strcmp(argv[1], "help")) {
 		print_help_and_exit(EXIT_SUCCESS);
 	}
