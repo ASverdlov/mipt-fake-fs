@@ -61,8 +61,6 @@ struct fs_description* init_fs(char* device_path) {
 		exit(1);
 	}
 
-	init_and_read_bitmap(fs);
-
 	return fs;
 }
 
@@ -107,6 +105,8 @@ int create_fs(char* device_path) {
 	if (err != 0) {
 		return err;
 	}
+
+	init_and_read_bitmap(fs);
 
 	printf("TODO: create a root directory!\n");
 
