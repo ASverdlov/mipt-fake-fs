@@ -41,10 +41,13 @@ struct inode* create_inode(struct fs_description* fs, int permissions) {
 	struct inode* i;
 	time_t now;
 	int block;
+	int err;
 
 	now = time(NULL);
 	block = allocate_inode(fs);
 	i = init_inode(fs, inode_id_by_block(fs, block));
+
+	fprintf(stderr, "create inode w/ permissions: %d\n", permissions);
 
 	memset(i->ondisk, 0, sizeof(struct inode_ondisk));
 	i->ondisk->permissions = permissions;
@@ -54,6 +57,12 @@ struct inode* create_inode(struct fs_description* fs, int permissions) {
 	i->ondisk->size = 0;
 	i->ondisk->access_time = now;
 	i->ondisk->modification_time = now;
+
+	err = save_inode(i);
+	if (err != 0) {
+		fprintf(stderr, "failed to save inode %d", i->id);
+		exit(1);
+	}
 
 	return i;
 }
@@ -75,6 +84,28 @@ int read_inode(struct inode* i) {
     while((have_read = fread(i->ondisk, sizeof(struct inode_ondisk), 1, f)) != 1) {
 		/* pass */
 	} 
+
+	return 0;
+}
+
+int save_inode(struct inode* i) {
+	FILE* f;
+	int err;
+	int written;
+	int offset;
+
+	f = i->fs->device_file;
+
+	offset = offset_for_inode(i->fs, i->id);
+	err = fseek(f, offset, SEEK_SET);
+	if (err != 0) {
+		return err;
+	}
+
+    while((written = fwrite(i->ondisk, sizeof(struct inode_ondisk), 1, f)) != 1) {
+		/* pass */
+	} 
+	fflush(f);
 
 	return 0;
 }
@@ -144,12 +175,6 @@ int save_inode_content(struct inode* i, void* from, int size) {
 
 	i->ondisk->size = size;
 
-	offset = offset_for_inode(i->fs, i->id);
-	err = fseek(f, offset, SEEK_SET);
-	if (err != 0) {
-		return err;
-	}
-
 	num_saved = 0;
 	for (id = 0; num_saved < size; ++id) {
 		block = i->ondisk->blocks[id];
@@ -165,12 +190,14 @@ int save_inode_content(struct inode* i, void* from, int size) {
 		}
 
 		need_in_block = MIN(blocksize, size - num_saved);
+
 		while((have_read = fwrite(from, need_in_block, 1, f)) != 1) {
 			/* pass */
 		} 
+		fflush(f);
 		from += need_in_block;
 		num_saved += need_in_block;
 	}
 
-	return 0;
+	return save_inode(i);
 }

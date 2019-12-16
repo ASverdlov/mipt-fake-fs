@@ -73,6 +73,7 @@ int save_bitmap(struct fs_description* fs) {
     while((written = fwrite(bitmap, num_blocks * sizeof(char), 1, f)) != 1) {
 		/* pass */
 	} 
+	fflush(f);
 
 	return 0;
 }
@@ -116,6 +117,7 @@ int allocate_internal(struct fs_description* fs, int start, int end) {
 	}
 
 	*(bitmap + block) = (char)1;
+	assert(*(bitmap + block) == (char)1);
 
 	err = save_bitmap(fs);
 	if (err != 0) {
@@ -147,6 +149,5 @@ int allocate_inode_block(struct fs_description* fs) {
 	start = ondisk->files_and_directories_offset / ondisk->blocksize;
 	cnt = ondisk->files_and_directories_blocknum;
 
-	int res = allocate_internal(fs, start, start + cnt);
-	return res;
+	return allocate_internal(fs, start, start + cnt);
 }

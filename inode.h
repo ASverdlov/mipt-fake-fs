@@ -30,6 +30,7 @@ struct inode {
 struct inode* create_inode(struct fs_description* fs, int permissions);
 struct inode* init_inode(struct fs_description* fs, int id);
 int read_inode(struct inode* i);
+int save_inode(struct inode* i);
 char is_directory_inode(struct fs_description* fs, int inode_id);
 int load_inode_content(struct inode* i, void* where, int size);
 int save_inode_content(struct inode* i, void* from, int size);

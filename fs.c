@@ -39,6 +39,7 @@ int fs_superblock_write(struct superblock_description* sb) {
 
 	written = fwrite((void*)sb->ondisk, sizeof(struct superblock_ondisk), 1, sb->fs->device_file);
 	assert(written);
+	fflush(sb->fs->device_file);
 
 	return 0;
 }
@@ -114,10 +115,10 @@ int create_fs(char* device_path) {
 
 	sb->ondisk->bitmap_offset = HARDCODED_BLOCKSIZE;
 
-	sb->ondisk->inodes_offset = 2 * HARDCODED_BLOCKSIZE;
+	sb->ondisk->inodes_offset = 64 * HARDCODED_BLOCKSIZE;
 	sb->ondisk->inodes_blocknum = HARDCODED_INODES_BLOCKNUM;
 
-	sb->ondisk->files_and_directories_offset = HARDCODED_BLOCKSIZE * (1 /* <- superblock */ + HARDCODED_INODES_BLOCKNUM /* <- inodes */);
+	sb->ondisk->files_and_directories_offset = HARDCODED_BLOCKSIZE * (64 /* <- superblock + large bitmap */ + HARDCODED_INODES_BLOCKNUM /* <- inodes */);
 	sb->ondisk->files_and_directories_blocknum = device_blocks - (1 + HARDCODED_INODES_BLOCKNUM);
 
 	int err = fs_superblock_write(sb);
