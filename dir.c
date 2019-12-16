@@ -270,16 +270,15 @@ void recursively_delete_inode(struct fs_description* fs, int inode_id, int paren
 
 			recursively_delete_inode(fs, ent->inode_id, inode_id, ent->name);
 		}
-	} else {
-		ondisk = i->ondisk;
-		for (entry_id = 0; entry_id < MAX_BLOCKS_NUM; ++entry_id) {
-			block = ondisk->blocks[entry_id];
-			if (block != 0) {
-				deallocate_block(fs, block);
-			}
-		}
 	}
 
+	ondisk = i->ondisk;
+	for (entry_id = 0; entry_id < MAX_BLOCKS_NUM; ++entry_id) {
+		block = ondisk->blocks[entry_id];
+		if (block != 0) {
+			deallocate_block(fs, block);
+		}
+	}
 	deallocate_block(fs, block_by_node_id(fs, inode_id));
 
 	parent_dir = dir_from_inode(fs, parent_inode_id);

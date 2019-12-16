@@ -51,7 +51,7 @@ struct inode* create_inode(struct fs_description* fs, int permissions) {
 
 	memset(i->ondisk, 0, sizeof(struct inode_ondisk));
 	i->ondisk->permissions = permissions;
-	i->ondisk->links = 0; // TODO: add when adding dirent
+	i->ondisk->links = 0;
 	i->ondisk->user_id = 0; // root
 	i->ondisk->group_id = 0; // root
 	i->ondisk->size = 0;
