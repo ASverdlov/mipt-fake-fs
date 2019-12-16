@@ -23,6 +23,7 @@ struct dir_description* init_dir(struct fs_description* fs);
 
 void add_dirent_ondisk(struct dir_description* dir, struct dirent_ondisk* d);
 void delete_dirent_ondisk_by_name(struct dir_description* dir, char* name);
+char dirent_exists(struct dir_description* dir, char* name);
 
 struct dir_description* dir_from_inode(struct fs_description* fs, int inode_id);
 int find_inode_by_path(struct fs_description* fs, char* path);

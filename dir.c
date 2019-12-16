@@ -132,6 +132,20 @@ void add_dirent_ondisk(struct dir_description* dir, struct dirent_ondisk* d) {
 	memcpy(&dir->ondisk->dirents[entry_id], d, sizeof(struct dirent));
 }
 
+char dirent_exists(struct dir_description* dir, char* name) {
+	int entry_id;
+	struct dirent_ondisk* ent;
+
+	for (entry_id = 0; entry_id < dir->ondisk->num_entries; ++entry_id) {
+		ent = &dir->ondisk->dirents[entry_id];
+		if (!strcmp(ent->name, name)) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 void delete_dirent_ondisk_by_name(struct dir_description* dir, char* name) {
 	int entry_id;
 	struct dirent_ondisk* ent;

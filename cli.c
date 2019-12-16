@@ -206,6 +206,12 @@ int mkdir_command(int argc, char** argv) {
 	
 	inode_id = find_inode_by_path(fs, parent_path);
 
+	dir = dir_from_inode(fs, inode_id);
+	if (dirent_exists(dir, name)) {
+		fprintf(stderr, "already exists\n");
+		exit(1);
+	}
+
 	(void)create_dir(fs, inode_id, name);
 
 	return 0;
