@@ -1,10 +1,10 @@
-# Команды
+# Supported CLI Commands
 | command | description |
 | ------- | ----------- |
-| `fakefs mkfs -o <device-file>` | creates a filesystem |
+| `fakefs mkfs <device-file>` | creates a filesystem |
 | `fakefs info` | shows filesystem metainfo |
-| `fakefs ls <dir-relative-path>` | lists directory content |
-| `fakefs mkdir <relative-path>` | creates a directory |
-| `fakefs rm <relative-path>` | removes file or directory |
-| `fakefs read <file-relative-path>` | reads file content to stdout |
-| `fakefs write <file-relative-path>` | writes stdin content to file | 
+| `fakefs mkdir <device-file> <absolute-path>` | creates a directory |
+| `fakefs ls <device-file> <absolute-path>` | lists directory content |
+| `fakefs rm <device-file> <absolute-path>` | removes file or directory |
+| `fakefs read <device-file> <absolute-path>` | reads file content to stdout |
+| `fakefs write <device-file> <absolute-path>` | writes stdin content to file | 
