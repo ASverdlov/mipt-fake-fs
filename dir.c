@@ -44,7 +44,7 @@ struct dir_description* create_dir(struct fs_description* fs, int parent_inode_i
 	int err;
 
 	// 1. create inode
-	i = create_inode(fs, 01777); // 1 - dir, 777 - permissions for everything to all users
+	i = create_inode(fs, 01666); // 1 - dir, 666 - permissions for everything (except execution) to all users
 
 	// 2. create dir
 	dir = init_dir(fs);
