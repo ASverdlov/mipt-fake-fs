@@ -123,7 +123,7 @@ int create_fs(char* device_path) {
 	}
 
 	create_bitmap(fs);
-	(void)create_dir(fs, 0);
+	(void)create_dir(fs, 0, "");
 
 	return 0;
 }

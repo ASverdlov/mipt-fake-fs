@@ -32,12 +32,15 @@ struct dir_description* init_dir(struct fs_description* fs) {
 	return dir;
 }
 
-struct dir_description* create_dir(struct fs_description* fs, int parent_inode_id) {
+struct dir_description* create_dir(struct fs_description* fs, int parent_inode_id, char* dirname) {
 	struct dir_description* dir;
+	struct dir_description* parent_dir;
 	int block;
 	struct inode* i;
+	struct inode* parent_i;
 	struct dirent_ondisk self_dirent;
 	struct dirent_ondisk parent_dirent;
+	struct dirent_ondisk dirent_for_parent;
 	int err;
 
 	// 1. create inode
@@ -53,7 +56,7 @@ struct dir_description* create_dir(struct fs_description* fs, int parent_inode_i
 	add_dirent_ondisk(dir, &self_dirent);
 
 	strncpy(parent_dirent.name, "..", 3);
-	parent_dirent.inode_id = i->id;
+	parent_dirent.inode_id = parent_inode_id;
 	add_dirent_ondisk(dir, &parent_dirent);
 
 	// 4. save dir
@@ -61,6 +64,24 @@ struct dir_description* create_dir(struct fs_description* fs, int parent_inode_i
 	if (err != 0) {
 		fprintf(stderr, "Failed to save dir content for inode %d", i->id);
 		exit(1);
+	}
+
+	// 5. save dirent for newly created directory in parent inode (if it's not root)
+	if (i->id != 0) {
+		parent_dir = dir_from_inode(fs, parent_inode_id);
+
+		strncpy(dirent_for_parent.name, dirname, strlen(dirname));
+		dirent_for_parent.inode_id = i->id;
+		add_dirent_ondisk(parent_dir, &dirent_for_parent);
+
+		parent_i = init_inode(fs, parent_inode_id);
+		read_inode(parent_i);
+
+		err = save_inode_content(parent_i, parent_dir->ondisk, sizeof(struct dir_ondisk));
+		if (err != 0) {
+			fprintf(stderr, "Failed to save parent dir content for inode %d", parent_inode_id);
+			exit(1);
+		}
 	}
 
 	return dir;
@@ -118,8 +139,10 @@ int find_inode_by_path(struct fs_description* fs, char* path) {
 		dir = dir_from_inode(fs, inode_id);
 
 		found_entry = 0;
+		fprintf(stderr, "search inode: search %s current inode %d has %d entries\n", part, inode_id, dir->ondisk->num_entries);
 		for (entry_id = 0; entry_id < dir->ondisk->num_entries; ++entry_id) {
 			ent = &dir->ondisk->dirents[entry_id];
+			fprintf(stderr, "search inode: search %s, comparing entry %s\n", part, ent->name);
 			if (!strcmp(ent->name, part)) {
 				inode_id = ent->inode_id;
 				found_entry = 1;
@@ -131,6 +154,8 @@ int find_inode_by_path(struct fs_description* fs, char* path) {
 			printf("Entry not found");
 			exit(1);
 		}
+
+		fprintf(stderr, "found %s in inode %d", part, inode_id);
 
 	    printf("\n%s", part);
 	    part = strtok(NULL, "/");

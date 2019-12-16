@@ -34,6 +34,7 @@ int mkdir_command(int argc, char** argv) {
 	char* device_path;
 	char* path;
 	char* parent_path;
+	char* name;
 	struct fs_description* fs;
 	int inode_id;
 	struct dir_description* dir;
@@ -58,17 +59,15 @@ int mkdir_command(int argc, char** argv) {
 	}
 
 	parent_path = dirname(path);
+	name = basename(path);
 	
 	printf("parent_path: %s\n", parent_path);
 
 	inode_id = find_inode_by_path(fs, parent_path);
-	dir = dir_from_inode(fs, inode_id);
 
-	// TODO
-	// 1. create inode with directory
-	// 2. save inode
-	// 3. add entry to dir
-	// 4. save dir
+	//dir = dir_from_inode(fs, inode_id);
+
+	(void)create_dir(fs, inode_id, name);
 
 	return 0;
 }

@@ -135,9 +135,14 @@ int load_inode_content(struct inode* i, void* where, int size) {
 	ondisk = i->ondisk;
 	blocksize = i->fs->superblock->ondisk->blocksize;
 
+	// TODO: delete
+	fprintf(stderr, "load_inode_content: size %d\n", size);
+
 	num_loaded = 0;
 	for (id = 0; num_loaded < size; ++id) {
+		// TODO: delete
 		block = i->ondisk->blocks[id];
+		fprintf(stderr, "load_inode_content: inode %d block %d\n", i->id, block);
 		assert(block != 0);    // expecting size not to exceed what blocks can hold
 
 		offset = block * blocksize;
@@ -181,6 +186,8 @@ int save_inode_content(struct inode* i, void* from, int size) {
 		if (!block) {
 			block = allocate_inode_block(i->fs);
 			i->ondisk->blocks[id] = block;
+			// TODO: delete
+			fprintf(stderr, "new block %d for inode %d\n", block, i->id);
 		}
 
 		offset = block * blocksize;

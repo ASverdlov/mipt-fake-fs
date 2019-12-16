@@ -8,7 +8,7 @@
 #include "inode.h"
 
 struct dirent_ondisk {
-	int inode_id : 2;
+	int inode_id;
 	char name[14];
 };
 
