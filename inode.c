@@ -157,6 +157,47 @@ int load_inode_content(struct inode* i, void* where, int size) {
 	return 0;
 }
 
+int load_inode_content_to_stream(struct inode* i, int size, FILE* to) {
+	int blocksize;
+	struct inode_ondisk* ondisk;
+	FILE* f;
+	int id;
+	int block;
+	int num_loaded;
+	int need_in_block;
+	int err;
+	int offset;
+	char* buffer;
+
+	f = i->fs->device_file;
+	ondisk = i->ondisk;
+	blocksize = i->fs->superblock->ondisk->blocksize;
+
+	buffer = (char*)malloc(sizeof(char) * blocksize);
+
+	num_loaded = 0;
+	for (id = 0; num_loaded < size; ++id) {
+		block = i->ondisk->blocks[id];
+		assert(block != 0);    // expecting size not to exceed what blocks can hold
+
+		offset = block * blocksize;
+		err = fseek(f, offset, SEEK_SET);
+		if (err != 0) {
+			return err;
+		}
+
+		need_in_block = MIN(blocksize, size - num_loaded);
+		while(fread(buffer, need_in_block, 1, f) != 1) {
+			/* pass */
+		} 
+		fwrite(buffer, need_in_block, 1, to);
+
+		num_loaded += need_in_block;
+	}
+
+	return 0;
+}
+
 int save_inode_content(struct inode* i, void* from, int size) {
 	int blocksize;
 	struct inode_ondisk* ondisk;
@@ -198,6 +239,61 @@ int save_inode_content(struct inode* i, void* from, int size) {
 		from += need_in_block;
 		num_saved += need_in_block;
 	}
+
+	return save_inode(i);
+}
+
+int save_inode_content_from_stream(struct inode* i, FILE* from) {
+	int blocksize;
+	struct inode_ondisk* ondisk;
+	FILE* f;
+	int id;
+	int block;
+	int num_saved;
+	int need_in_block;
+	int err;
+	int offset;
+	int have_read;
+	int have_read_from_stream;
+	int read_for_block;
+	char* buffer;
+
+	f = i->fs->device_file;
+	ondisk = i->ondisk;
+	blocksize = i->fs->superblock->ondisk->blocksize;
+
+	buffer = (char*)malloc(sizeof(char) * blocksize);
+
+	num_saved = 0;
+	for (id = 0; !feof(from); ++id) {
+		block = i->ondisk->blocks[id];
+		if (!block) {
+			block = allocate_inode_block(i->fs);
+			i->ondisk->blocks[id] = block;
+		}
+
+		offset = block * blocksize;
+		err = fseek(f, offset, SEEK_SET);
+		if (err != 0) {
+			return err;
+		}
+
+		read_for_block = 0;
+		while (!feof(from) && read_for_block < blocksize) {
+			need_in_block = blocksize - read_for_block;
+
+			have_read_from_stream = fread(buffer, sizeof(char), need_in_block, from);
+			while(fwrite(buffer, have_read_from_stream, 1, f) != 1) {
+				/* pass */
+			} 
+			fflush(f);
+
+			read_for_block += have_read_from_stream;
+			num_saved += have_read_from_stream;
+		}
+	}
+
+	i->ondisk->size = num_saved;
 
 	return save_inode(i);
 }

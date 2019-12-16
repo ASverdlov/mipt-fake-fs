@@ -93,6 +93,52 @@ int ls_command(int argc, char** argv) {
 	return 0;
 }
 
+int write_command(int argc, char** argv) {
+	// $ fakefs write <device-file> <path>
+	int err;
+	char* device_path;
+	char* path;
+	char* parent_path;
+	char* name;
+	struct fs_description* fs;
+	int inode_id;
+	struct inode* i;
+
+	if (argc != 4) {
+		printf("$ fakefs mkdir <device-file> <path>\n\n");
+		printf("ERROR: 4 arguments required, but got %d arguments.\n", argc);
+		return EXIT_FAILURE;
+	}
+
+	device_path = argv[2];
+	path = argv[3];
+
+	fs = init_fs(device_path);
+	if (fs <= 0) {
+		return (int)fs;
+	}
+
+	err = read_fs(fs, device_path);
+	if (err != 0) {
+		return err;
+	}
+
+	parent_path = dirname(path);
+	name = basename(path);
+
+	// TODO: delete
+	fprintf(stderr, "parent_path: '%s'", parent_path);
+	fprintf(stderr, "filename: '%s'", name);
+
+	inode_id = find_inode_by_path(fs, parent_path);
+
+	i = create_file(fs, inode_id, name);
+
+	// TODO: write to file from stdin
+
+	return 0;
+}
+
 int mkdir_command(int argc, char** argv) {
 	// $ fakefs mkdir <device-file> <path>
 	int err;
@@ -126,8 +172,6 @@ int mkdir_command(int argc, char** argv) {
 	parent_path = dirname(path);
 	name = basename(path);
 	
-	printf("parent_path: %s\n", parent_path);
-
 	inode_id = find_inode_by_path(fs, parent_path);
 
 	//dir = dir_from_inode(fs, inode_id);
@@ -176,6 +220,8 @@ int cli_dispatch_command(int argc, char** argv) {
 		return mkdir_command(argc, argv);
 	} else if (!strcmp(argv[1], "ls")) {
 		return ls_command(argc, argv);
+	} else if (!strcmp(argv[1], "write")) {
+		return write_command(argc, argv);
 	} else if (!strcmp(argv[1], "help")) {
 		print_help_and_exit(EXIT_SUCCESS);
 	}

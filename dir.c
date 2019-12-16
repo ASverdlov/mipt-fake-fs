@@ -32,10 +32,38 @@ struct dir_description* init_dir(struct fs_description* fs) {
 	return dir;
 }
 
+struct inode* create_file(struct fs_description* fs, int parent_inode_id, char* filename) {
+	struct dir_description* parent_dir;
+	struct inode* i;
+	struct inode* parent_i;
+	struct dirent_ondisk dirent_for_parent;
+	int err;
+
+	// 1. create inode
+	i = create_inode(fs, 0666); // 666 - permissions for everything (except execution) to all users
+
+	// 2. save dirent for newly created directory in parent inode (if it's not root)
+	parent_dir = dir_from_inode(fs, parent_inode_id);
+
+	strncpy(dirent_for_parent.name, filename, strlen(filename) + 1);
+	dirent_for_parent.inode_id = i->id;
+	add_dirent_ondisk(parent_dir, &dirent_for_parent);
+
+	parent_i = init_inode(fs, parent_inode_id);
+	read_inode(parent_i);
+
+	err = save_inode_content(parent_i, parent_dir->ondisk, sizeof(struct dir_ondisk));
+	if (err != 0) {
+		fprintf(stderr, "Failed to save parent dir content for inode %d", parent_inode_id);
+		exit(1);
+	}
+
+	return i;
+}
+
 struct dir_description* create_dir(struct fs_description* fs, int parent_inode_id, char* dirname) {
 	struct dir_description* dir;
 	struct dir_description* parent_dir;
-	int block;
 	struct inode* i;
 	struct inode* parent_i;
 	struct dirent_ondisk self_dirent;
@@ -70,7 +98,7 @@ struct dir_description* create_dir(struct fs_description* fs, int parent_inode_i
 	if (i->id != 0) {
 		parent_dir = dir_from_inode(fs, parent_inode_id);
 
-		strncpy(dirent_for_parent.name, dirname, strlen(dirname));
+		strncpy(dirent_for_parent.name, dirname, strlen(dirname) + 1);
 		dirent_for_parent.inode_id = i->id;
 		add_dirent_ondisk(parent_dir, &dirent_for_parent);
 

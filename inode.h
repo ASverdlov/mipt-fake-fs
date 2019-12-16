@@ -21,6 +21,7 @@ struct inode_ondisk {
 };
 
 struct inode_ondisk* init_inode_ondisk(struct fs_description* fs);
+
 struct inode {
 	struct inode_ondisk* ondisk;
 	int id;
@@ -31,8 +32,14 @@ struct inode* create_inode(struct fs_description* fs, int permissions);
 struct inode* init_inode(struct fs_description* fs, int id);
 int read_inode(struct inode* i);
 int save_inode(struct inode* i);
-char is_directory_inode(struct fs_description* fs, int inode_id);
+
 int load_inode_content(struct inode* i, void* where, int size);
+int load_inode_content_to_stream(struct inode* i, int size, FILE* to);
+
 int save_inode_content(struct inode* i, void* from, int size);
+int save_inode_content_from_stream(struct inode* i, FILE* from);
+
+char is_directory_inode(struct fs_description* fs, int inode_id);
+
 
 #endif
