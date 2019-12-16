@@ -28,6 +28,71 @@ int mkfs_command(int argc, char** argv) {
 	return create_fs(device_path);
 }
 
+char* format_permissions(int permissions) {
+	char* s = malloc(11 * sizeof(char));
+
+	s[0] = ((permissions & (1 << 9)) > 0 ? 'd' : '-');
+	s[1] = ((permissions & (1 << 8)) > 0 ? 'r' : '-');
+	s[2] = ((permissions & (1 << 7)) > 0 ? 'w' : '-');
+	s[3] = ((permissions & (1 << 6)) > 0 ? 'x' : '-');
+	s[4] = ((permissions & (1 << 5)) > 0 ? 'r' : '-');
+	s[5] = ((permissions & (1 << 4)) > 0 ? 'w' : '-');
+	s[6] = ((permissions & (1 << 3)) > 0 ? 'x' : '-');
+	s[7] = ((permissions & (1 << 2)) > 0 ? 'r' : '-');
+	s[8] = ((permissions & (1 << 1)) > 0 ? 'w' : '-');
+	s[9] = ((permissions & (1 << 0)) > 0 ? 'x' : '-');
+	s[10] = '\0';
+
+	return s;
+}
+
+int ls_command(int argc, char** argv) {
+	// $ fakefs ls <device-file> <path>
+	int err;
+	char* device_path;
+	char* path;
+	struct fs_description* fs;
+	int inode_id;
+	struct dir_description* dir;
+	int dirent_id;
+	struct dirent_ondisk* ent;
+	struct inode* i;
+
+	if (argc != 4) {
+		printf("$ fakefs ls <device-file> <path>\n\n");
+		printf("ERROR: 4 arguments required, but got %d arguments.\n", argc);
+		return EXIT_FAILURE;
+	}
+
+	device_path = argv[2];
+	path = argv[3];
+
+	fs = init_fs(device_path);
+	if (fs <= 0) {
+		return (int)fs;
+	}
+
+	err = read_fs(fs, device_path);
+	if (err != 0) {
+		return err;
+	}
+
+	inode_id = find_inode_by_path(fs, path);
+
+	dir = dir_from_inode(fs, inode_id);
+
+	for (dirent_id = 0; dirent_id < dir->ondisk->num_entries; ++dirent_id) {
+		ent = &dir->ondisk->dirents[dirent_id];
+
+		i = init_inode(fs, ent->inode_id);
+		read_inode(i);
+
+		printf("%d\t%s\t%s\n", i->id, format_permissions(i->ondisk->permissions), ent->name);
+	}
+
+	return 0;
+}
+
 int mkdir_command(int argc, char** argv) {
 	// $ fakefs mkdir <device-file> <path>
 	int err;
@@ -109,6 +174,8 @@ int cli_dispatch_command(int argc, char** argv) {
 		return info_command(argc, argv);
 	} else if (!strcmp(argv[1], "mkdir")) {
 		return mkdir_command(argc, argv);
+	} else if (!strcmp(argv[1], "ls")) {
+		return ls_command(argc, argv);
 	} else if (!strcmp(argv[1], "help")) {
 		print_help_and_exit(EXIT_SUCCESS);
 	}

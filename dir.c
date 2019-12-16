@@ -139,10 +139,8 @@ int find_inode_by_path(struct fs_description* fs, char* path) {
 		dir = dir_from_inode(fs, inode_id);
 
 		found_entry = 0;
-		fprintf(stderr, "search inode: search %s current inode %d has %d entries\n", part, inode_id, dir->ondisk->num_entries);
 		for (entry_id = 0; entry_id < dir->ondisk->num_entries; ++entry_id) {
 			ent = &dir->ondisk->dirents[entry_id];
-			fprintf(stderr, "search inode: search %s, comparing entry %s\n", part, ent->name);
 			if (!strcmp(ent->name, part)) {
 				inode_id = ent->inode_id;
 				found_entry = 1;
@@ -151,13 +149,10 @@ int find_inode_by_path(struct fs_description* fs, char* path) {
 		}
 
 		if (!found_entry) {
-			printf("Entry not found");
+			fprintf(stderr, "entry '%s' not found\n", part);
 			exit(1);
 		}
 
-		fprintf(stderr, "found %s in inode %d", part, inode_id);
-
-	    printf("\n%s", part);
 	    part = strtok(NULL, "/");
 	}
 

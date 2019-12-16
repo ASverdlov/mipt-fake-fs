@@ -6,7 +6,5 @@ int main(int argc, char** argv) {
         return err;
     }
 
-    printf("OK\n");
-
     return 0;
 }
