@@ -7,9 +7,11 @@
 #include "fs.h"
 #include "inode.h"
 
+#define MAX_FILENAME 13
+
 struct dirent_ondisk {
 	int inode_id;
-	char name[14];
+	char name[MAX_FILENAME + 1];
 };
 
 struct dirent_ondisk* init_dirent_ondisk();

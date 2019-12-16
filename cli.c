@@ -126,15 +126,10 @@ int write_command(int argc, char** argv) {
 	parent_path = dirname(path);
 	name = basename(path);
 
-	// TODO: delete
-	fprintf(stderr, "parent_path: '%s'", parent_path);
-	fprintf(stderr, "filename: '%s'", name);
-
 	inode_id = find_inode_by_path(fs, parent_path);
 
 	i = create_file(fs, inode_id, name);
-
-	// TODO: write to file from stdin
+	save_inode_content_from_stream(i, stdin);
 
 	return 0;
 }

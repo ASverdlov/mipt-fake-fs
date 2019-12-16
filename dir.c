@@ -45,12 +45,18 @@ struct inode* create_file(struct fs_description* fs, int parent_inode_id, char* 
 	// 2. save dirent for newly created directory in parent inode (if it's not root)
 	parent_dir = dir_from_inode(fs, parent_inode_id);
 
-	strncpy(dirent_for_parent.name, filename, strlen(filename) + 1);
+	if (strlen(filename) > MAX_FILENAME) {
+		fprintf(stderr, "filename length exceeds %d", MAX_FILENAME);
+		exit(1);
+	}
+	strcpy(dirent_for_parent.name, filename);
+	
 	dirent_for_parent.inode_id = i->id;
 	add_dirent_ondisk(parent_dir, &dirent_for_parent);
 
 	parent_i = init_inode(fs, parent_inode_id);
 	read_inode(parent_i);
+
 
 	err = save_inode_content(parent_i, parent_dir->ondisk, sizeof(struct dir_ondisk));
 	if (err != 0) {
@@ -79,11 +85,11 @@ struct dir_description* create_dir(struct fs_description* fs, int parent_inode_i
 	dir->ondisk->num_entries = 0;
 
 	// 3. add dirents
-	strncpy(self_dirent.name, ".", 2);
+	strncpy(self_dirent.name, ".\0", 2);
 	self_dirent.inode_id = i->id;
 	add_dirent_ondisk(dir, &self_dirent);
 
-	strncpy(parent_dirent.name, "..", 3);
+	strncpy(parent_dirent.name, "..\0", 3);
 	parent_dirent.inode_id = parent_inode_id;
 	add_dirent_ondisk(dir, &parent_dirent);
 
@@ -98,7 +104,11 @@ struct dir_description* create_dir(struct fs_description* fs, int parent_inode_i
 	if (i->id != 0) {
 		parent_dir = dir_from_inode(fs, parent_inode_id);
 
-		strncpy(dirent_for_parent.name, dirname, strlen(dirname) + 1);
+		if (strlen(dirname) > MAX_FILENAME) {
+			fprintf(stderr, "filename length exceeds %d", MAX_FILENAME);
+			exit(1);
+		}
+		strcpy(dirent_for_parent.name, dirname);
 		dirent_for_parent.inode_id = i->id;
 		add_dirent_ondisk(parent_dir, &dirent_for_parent);
 
