@@ -32,12 +32,36 @@ struct dir_description* init_dir(struct fs_description* fs) {
 	return dir;
 }
 
-struct dir_description* create_dir(struct fs_description* fs) {
+struct dir_description* create_dir(struct fs_description* fs, int parent_inode_id) {
 	struct dir_description* dir;
 	int block;
+	struct inode* i;
+	struct dirent_ondisk self_dirent;
+	struct dirent_ondisk parent_dirent;
+	int err;
 
+	// 1. create inode
+	i = create_inode(fs, 01777); // 1 - dir, 777 - permissions for everything to all users
+
+	// 2. create dir
 	dir = init_dir(fs);
 	dir->ondisk->num_entries = 0;
+
+	// 3. add dirents
+	strncpy(self_dirent.name, ".", 2);
+	self_dirent.inode_id = i->id;
+	add_dirent_ondisk(dir, &self_dirent);
+
+	strncpy(parent_dirent.name, "..", 3);
+	parent_dirent.inode_id = i->id;
+	add_dirent_ondisk(dir, &parent_dirent);
+
+	// 4. save dir
+	err = save_inode_content(i, dir->ondisk, sizeof(struct dir_ondisk));
+	if (err != 0) {
+		fprintf(stderr, "Failed to save dir content for inode %d", i->id);
+		exit(1);
+	}
 
 	return dir;
 }
@@ -114,3 +138,5 @@ int find_inode_by_path(struct fs_description* fs, char* path) {
 
 	return inode_id;
 }
+
+

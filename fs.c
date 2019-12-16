@@ -97,10 +97,6 @@ int create_fs(char* device_path) {
 	struct dir_description* dir;
 	int device_size;
 	int device_blocks;
-	int block;
-	struct inode* i;
-	struct dirent_ondisk self_dirent;
-	struct dirent_ondisk parent_dirent;
 
 	fs = init_fs(device_path);
 
@@ -127,29 +123,7 @@ int create_fs(char* device_path) {
 	}
 
 	create_bitmap(fs);
-
-	// 1. create inode
-	i = create_inode(fs, 01777); // 1 - dir, 777 - permissions for everything to all users
-	assert(i->id == 0);
-
-	// 2. create dir
-	dir = create_dir(fs);
-
-	// 3. add dirents
-	strncpy(self_dirent.name, ".", 2);
-	self_dirent.inode_id = i->id;
-	add_dirent_ondisk(dir, &self_dirent);
-
-	strncpy(parent_dirent.name, "..", 3);
-	parent_dirent.inode_id = i->id;
-	add_dirent_ondisk(dir, &parent_dirent);
-
-	// 4. save dir
-	err = save_inode_content(i, dir->ondisk, sizeof(struct dir_ondisk));
-	if (err != 0) {
-		fprintf(stderr, "Failed to save dir content for inode %d", i->id);
-		exit(1);
-	}
+	(void)create_dir(fs, 0);
 
 	return 0;
 }

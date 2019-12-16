@@ -16,7 +16,7 @@ struct dir_description {
 	struct fs_description* fs;
 };
 
-struct dir_description* create_dir(struct fs_description* fs);
+struct dir_description* create_dir(struct fs_description* fs, int parent_inode_id);
 struct dir_description* init_dir(struct fs_description* fs);
 void add_dirent_ondisk(struct dir_description* dir, struct dirent_ondisk* d);
 struct dir_description* dir_from_inode(struct fs_description* fs, int inode_id);
