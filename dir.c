@@ -245,8 +245,6 @@ int find_inode_by_path(struct fs_description* fs, char* orig_path) {
 void recursively_delete_inode(struct fs_description* fs, int inode_id, int parent_inode_id, char* name) {
 	assert(inode_id != 0);
 
-	fprintf(stderr, "recursively_delete_inode %d, name '%s'\n", inode_id, name);
-
 	struct dir_description* dir;
 	struct dir_description* parent_dir;
 	struct dirent_ondisk* ent;
@@ -260,7 +258,7 @@ void recursively_delete_inode(struct fs_description* fs, int inode_id, int paren
 	i = init_inode(fs, inode_id);
 	read_inode(i);
 
-	if (is_directory_inode(fs, parent_inode_id)) {
+	if (is_directory_inode(fs, inode_id)) {
 		dir = dir_from_inode(fs, inode_id);
 		for (entry_id = 0; entry_id < dir->ondisk->num_entries; ++entry_id) {
 			ent = &dir->ondisk->dirents[entry_id];
@@ -285,7 +283,6 @@ void recursively_delete_inode(struct fs_description* fs, int inode_id, int paren
 	parent_i = init_inode(fs, parent_inode_id);
 	read_inode(parent_i);
 
-	fprintf(stderr, "delete entry from parent inode %d, entry with name %s\n", parent_i->id, name);
 	delete_dirent_ondisk_by_name(parent_dir, name);
 
 	err = save_inode_content(parent_i, parent_dir->ondisk, sizeof(struct dir_ondisk));
