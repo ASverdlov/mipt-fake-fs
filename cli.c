@@ -87,7 +87,7 @@ int ls_command(int argc, char** argv) {
 		i = init_inode(fs, ent->inode_id);
 		read_inode(i);
 
-		printf("%d\t%s\t%s\n", i->id, format_permissions(i->ondisk->permissions), ent->name);
+		printf("%s\t%d\t%d\t%s\n", format_permissions(i->ondisk->permissions), i->id, i->ondisk->size, ent->name);
 	}
 
 	return 0;
@@ -105,7 +105,7 @@ int write_command(int argc, char** argv) {
 	struct inode* i;
 
 	if (argc != 4) {
-		printf("$ fakefs mkdir <device-file> <path>\n\n");
+		printf("$ fakefs write <device-file> <path>\n\n");
 		printf("ERROR: 4 arguments required, but got %d arguments.\n", argc);
 		return EXIT_FAILURE;
 	}
@@ -130,6 +130,43 @@ int write_command(int argc, char** argv) {
 
 	i = create_file(fs, inode_id, name);
 	save_inode_content_from_stream(i, stdin);
+
+	return 0;
+}
+
+int read_command(int argc, char** argv) {
+	// $ fakefs read <device-file> <path>
+	int err;
+	char* device_path;
+	char* path;
+	struct fs_description* fs;
+	int inode_id;
+	struct inode* i;
+
+	if (argc != 4) {
+		printf("$ fakefs read <device-file> <path>\n\n");
+		printf("ERROR: 4 arguments required, but got %d arguments.\n", argc);
+		return EXIT_FAILURE;
+	}
+
+	device_path = argv[2];
+	path = argv[3];
+
+	fs = init_fs(device_path);
+	if (fs <= 0) {
+		return (int)fs;
+	}
+
+	err = read_fs(fs, device_path);
+	if (err != 0) {
+		return err;
+	}
+
+	inode_id = find_inode_by_path(fs, path);
+	i = init_inode(fs, inode_id);
+	read_inode(i);
+
+	load_inode_content_to_stream(i, i->ondisk->size, stdout);
 
 	return 0;
 }
@@ -217,6 +254,8 @@ int cli_dispatch_command(int argc, char** argv) {
 		return ls_command(argc, argv);
 	} else if (!strcmp(argv[1], "write")) {
 		return write_command(argc, argv);
+	} else if (!strcmp(argv[1], "read")) {
+		return read_command(argc, argv);
 	} else if (!strcmp(argv[1], "help")) {
 		print_help_and_exit(EXIT_SUCCESS);
 	}
