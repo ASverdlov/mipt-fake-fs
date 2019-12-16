@@ -20,7 +20,12 @@ struct inode* create_file(struct fs_description* fs, int parent_inode_id, char* 
 
 struct dir_description* create_dir(struct fs_description* fs, int parent_inode_id, char* dirname);
 struct dir_description* init_dir(struct fs_description* fs);
+
 void add_dirent_ondisk(struct dir_description* dir, struct dirent_ondisk* d);
+void delete_dirent_ondisk_by_name(struct dir_description* dir, char* name);
+
 struct dir_description* dir_from_inode(struct fs_description* fs, int inode_id);
 int find_inode_by_path(struct fs_description* fs, char* path);
+void recursively_delete_inode(struct fs_description* fs, int inode_id, int parent_inode_id, char* name);
+
 #endif

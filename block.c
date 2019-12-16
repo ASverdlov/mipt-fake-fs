@@ -128,6 +128,22 @@ int allocate_internal(struct fs_description* fs, int start, int end) {
 	return block;
 }
 
+void deallocate_block(struct fs_description* fs, int block) {
+	char* bitmap;
+	int err;
+
+	bitmap = fs->bitmap->bitmap;
+
+	*(bitmap + block) = (char)0;
+	assert(*(bitmap + block) == (char)0);
+
+	err = save_bitmap(fs);
+	if (err != 0) {
+		fprintf(stderr, "failed to save bitmap");
+		exit(1);
+	}
+}
+
 int allocate_inode(struct fs_description* fs) {
 	struct superblock_ondisk* ondisk;
 	int start;
@@ -150,4 +166,26 @@ int allocate_inode_block(struct fs_description* fs) {
 	cnt = ondisk->files_and_directories_blocknum;
 
 	return allocate_internal(fs, start, start + cnt);
+}
+
+void print_allocation_stats(struct fs_description* fs) {
+	struct superblock_ondisk* ondisk;
+	char* bitmap;
+	int num_blocks;
+	int allocated_blocks;
+	int block;
+
+	ondisk = fs->superblock->ondisk;
+	bitmap = fs->bitmap->bitmap;
+	num_blocks = ondisk->size / ondisk->blocksize;
+
+	allocated_blocks = 0;
+
+	for (block = 0; block < num_blocks; ++block) {
+		if (*(bitmap + block) == (char)1) {
+			++allocated_blocks;
+		}
+	}
+
+	printf(" - allocated_blocks: %d\n", allocated_blocks);
 }

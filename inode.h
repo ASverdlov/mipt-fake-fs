@@ -7,6 +7,8 @@
 #include "fs.h"
 #include "utility.h"
 
+#define MAX_BLOCKS_NUM 64
+
 struct inode_ondisk {
 	int permissions;
 	int links;
@@ -17,7 +19,7 @@ struct inode_ondisk {
 	time_t access_time;
 	time_t modification_time;
 
-	int blocks[12]; // TODO: hardcode max number of blocks
+	int blocks[MAX_BLOCKS_NUM];
 };
 
 struct inode_ondisk* init_inode_ondisk(struct fs_description* fs);

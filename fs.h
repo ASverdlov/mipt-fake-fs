@@ -27,5 +27,6 @@ int read_fs(struct fs_description* fs, char* device_path);
 int create_fs(char* device_path);
 int offset_for_inode(struct fs_description* fs, int inode_id);
 int inode_id_by_block(struct fs_description* fs, int block);
+int block_by_node_id(struct fs_description* fs, int inode_id);
 
 #endif

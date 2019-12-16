@@ -9,5 +9,7 @@
 
 int get_file_size(char* path);
 
+char* safe_basename(char* path);
+char* safe_dirname(char* path);
 
 #endif

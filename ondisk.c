@@ -40,7 +40,5 @@ void print_superblock_ondisk(struct superblock_ondisk* ondisk) {
 	printf(" - magic: %d\n",     ondisk->magic);
 	printf(" - size: %d\n",      ondisk->size);
 	printf(" - blocksize: %d\n", ondisk->blocksize);
-	printf("\n");
 	printf(" - inodes_offset: %d\n", ondisk->inodes_offset);
-	printf("TODO\n");
 }

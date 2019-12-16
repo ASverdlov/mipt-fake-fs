@@ -3,11 +3,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "libgen.h"
 
 #include "dir.h"
 #include "fs.h"
 #include "ondisk.h"
+#include "utility.h"
 
 void print_help_and_exit(int status) {
     printf("Help\n");
@@ -123,8 +123,8 @@ int write_command(int argc, char** argv) {
 		return err;
 	}
 
-	parent_path = dirname(path);
-	name = basename(path);
+	parent_path = safe_dirname(path);
+	name = safe_basename(path);
 
 	inode_id = find_inode_by_path(fs, parent_path);
 
@@ -201,14 +201,51 @@ int mkdir_command(int argc, char** argv) {
 		return err;
 	}
 
-	parent_path = dirname(path);
-	name = basename(path);
+	parent_path = safe_dirname(path);
+	name = safe_basename(path);
 	
 	inode_id = find_inode_by_path(fs, parent_path);
 
-	//dir = dir_from_inode(fs, inode_id);
-
 	(void)create_dir(fs, inode_id, name);
+
+	return 0;
+}
+
+int rm_command(int argc, char** argv) {
+	// $ fakefs rm <device-file> <path>
+	int err;
+	char* device_path;
+	char* path;
+	char* parent_path;
+	char* name;
+	struct fs_description* fs;
+	int inode_id;
+	int parent_inode_id;
+	struct dir_description* dir;
+
+	if (argc != 4) {
+		printf("$ fakefs rm <device-file> <path>\n\n");
+		printf("ERROR: 4 arguments required, but got %d arguments.\n", argc);
+		return EXIT_FAILURE;
+	}
+
+	device_path = argv[2];
+	path = argv[3];
+
+	fs = init_fs(device_path);
+	if (fs <= 0) {
+		return (int)fs;
+	}
+
+	err = read_fs(fs, device_path);
+	if (err != 0) {
+		return err;
+	}
+
+	inode_id = find_inode_by_path(fs, path);
+	parent_inode_id = find_inode_by_path(fs, safe_dirname(path));
+	
+	recursively_delete_inode(fs, inode_id, parent_inode_id, safe_basename(path));
 
 	return 0;
 }
@@ -236,6 +273,8 @@ int info_command(int argc, char** argv) {
 	}
 
 	print_superblock_ondisk(fs->superblock->ondisk);
+	print_allocation_stats(fs);
+
 	return 0;
 }
 
@@ -256,6 +295,8 @@ int cli_dispatch_command(int argc, char** argv) {
 		return write_command(argc, argv);
 	} else if (!strcmp(argv[1], "read")) {
 		return read_command(argc, argv);
+	} else if (!strcmp(argv[1], "rm")) {
+		return rm_command(argc, argv);
 	} else if (!strcmp(argv[1], "help")) {
 		print_help_and_exit(EXIT_SUCCESS);
 	}
