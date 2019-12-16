@@ -215,6 +215,7 @@ int save_inode_content(struct inode* i, void* from, int size) {
 	blocksize = i->fs->superblock->ondisk->blocksize;
 
 	i->ondisk->size = size;
+	i->ondisk->modification_time = time(NULL);
 
 	num_saved = 0;
 	for (id = 0; num_saved < size; ++id) {
@@ -294,6 +295,7 @@ int save_inode_content_from_stream(struct inode* i, FILE* from) {
 	}
 
 	i->ondisk->size = num_saved;
+	i->ondisk->modification_time = time(NULL);
 
 	return save_inode(i);
 }
